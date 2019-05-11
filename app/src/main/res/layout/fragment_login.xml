@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  xmlns:app="http://schemas.android.com/apk/res-auto"
+  xmlns:tools="http://schemas.android.com/tools"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent">
+
+  <com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/textUsername"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="@string/login_username"
+    app:layout_constraintBottom_toTopOf="@+id/textPassword"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.5"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintVertical_chainStyle="packed"
+    app:layout_constraintWidth_percent="0.7">
+    <com.google.android.material.textfield.TextInputEditText
+      android:id="@+id/etUsername"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:inputType="text"
+      tools:text="testUser"/>
+  </com.google.android.material.textfield.TextInputLayout>
+
+  <com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/textPassword"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:hint="@string/login_password"
+    app:layout_constraintBottom_toTopOf="@+id/loginProgress"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.5"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/textUsername"
+    app:layout_constraintWidth_percent="0.7"
+    app:passwordToggleEnabled="true">
+    <com.google.android.material.textfield.TextInputEditText
+      android:id="@+id/etPassword"
+      android:layout_width="match_parent"
+      android:layout_height="wrap_content"
+      android:inputType="textPassword"
+      tools:text="testPassword"/>
+  </com.google.android.material.textfield.TextInputLayout>
+
+  <ProgressBar
+    android:id="@+id/loginProgress"
+    style="?android:attr/progressBarStyleHorizontal"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:indeterminate="true"
+    android:visibility="gone"
+    app:layout_constraintBottom_toTopOf="@+id/btnLogin"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.5"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/textPassword"
+    app:layout_constraintWidth_percent="0.7"
+    tools:visibility="visible"/>
+
+  <Button
+    android:id="@+id/btnLogin"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:enabled="false"
+    android:text="@string/login_login"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintHorizontal_bias="0.5"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/loginProgress"
+    app:layout_constraintWidth_percent="0.7"
+    app:layout_goneMarginTop="16dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
