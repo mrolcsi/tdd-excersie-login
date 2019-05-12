@@ -80,6 +80,7 @@ where
 * `401`: when the authentication has failed due to invalid credentials
 
 **Extend authentication**
+
 Endpoint: `/idp/api/v1/token`
 
 Request (`POST, application/x-www-form-urlencoded`):
@@ -88,6 +89,6 @@ Request (`POST, application/x-www-form-urlencoded`):
 * `grant_type = “refresh_token”`
 * `client_id = “69bfdce9-2c9f-4a12-aa7b-4fe15e1228dc”`
 
-Response (application/json``): 
+Response (`application/json`): 
 * `200`: The same as the authentication response above.
 * `401`: when the operation has failed due to invalid refresh token	
