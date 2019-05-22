@@ -1,24 +1,22 @@
 package com.example.tdd.login
 
+import android.content.Context
 import androidx.annotation.IntDef
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.api.models.AuthenticationResponse
-import org.jetbrains.annotations.TestOnly
+import com.example.tdd.session.SessionManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class LoginViewModel() : ViewModel() {
-
-  @TestOnly
-  constructor(apiUrl: String) : this() {
-    mApiUrl = apiUrl
-  }
-
-  private var mApiUrl: String = AuthenticationApi.API_URL
+class LoginViewModel(
+  private val sessionManager: SessionManager,
+  private val apiUrl: String = AuthenticationApi.API_URL
+) : ViewModel(), Callback<AuthenticationResponse> {
 
   private val mAuthenticationState = MutableLiveData<@AuthenticationState Int>().apply {
     value = UNAUTHENTICATED
@@ -26,23 +24,43 @@ class LoginViewModel() : ViewModel() {
   val authenticationState: LiveData<Int>
     get() = mAuthenticationState
 
+  init {
+    val token = sessionManager.refreshToken
+    if (token != null) {
+      login(token)
+    }
+  }
+
   fun login(username: String, password: String) {
     mAuthenticationState.postValue(IN_PROGRESS)
-    AuthenticationApi.getInstance(mApiUrl)
+    AuthenticationApi.getInstance(apiUrl)
       .authenticate(username, password)
-      .enqueue(object : Callback<AuthenticationResponse> {
-        override fun onFailure(call: Call<AuthenticationResponse>, t: Throwable) {
-          mAuthenticationState.postValue(NETWORK_ERROR)
-        }
+      .enqueue(this)
+  }
 
-        override fun onResponse(call: Call<AuthenticationResponse>, response: Response<AuthenticationResponse>) {
-          when (response.code()) {
-            200 -> mAuthenticationState.postValue(AUTHENTICATED)
-            401 -> mAuthenticationState.postValue(AUTHENTICATION_FAILED)
-            else -> mAuthenticationState.postValue(UNKNOWN_ERROR)
-          }
+  fun login(token: String) {
+    mAuthenticationState.postValue(IN_PROGRESS)
+    AuthenticationApi.getInstance(apiUrl)
+      .extendAuthentication(token)
+      .enqueue(this)
+  }
+
+  override fun onFailure(call: Call<AuthenticationResponse>, t: Throwable) {
+    mAuthenticationState.postValue(NETWORK_ERROR)
+  }
+
+  override fun onResponse(call: Call<AuthenticationResponse>, response: Response<AuthenticationResponse>) {
+    when (response.code()) {
+      200 -> {
+        response.body()?.run {
+          sessionManager.accessToken = accessToken
+          sessionManager.refreshToken = refreshToken
         }
-      })
+        mAuthenticationState.postValue(AUTHENTICATED)
+      }
+      401 -> mAuthenticationState.postValue(AUTHENTICATION_FAILED)
+      else -> mAuthenticationState.postValue(UNKNOWN_ERROR)
+    }
   }
 
   companion object {
@@ -52,6 +70,14 @@ class LoginViewModel() : ViewModel() {
     const val IN_PROGRESS = 1
     const val AUTHENTICATED = 200
     const val AUTHENTICATION_FAILED = 401
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  class Factory(private val context: Context) : ViewModelProvider.NewInstanceFactory() {
+
+    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
+      return LoginViewModel(SessionManager(context)) as T
+    }
   }
 
   @IntDef(UNAUTHENTICATED, AUTHENTICATED, AUTHENTICATION_FAILED)

@@ -19,6 +19,8 @@ interface AuthenticationApi {
     @Field("client_id") clientId: String = CLIENT_ID
   ): Call<AuthenticationResponse>
 
+  @POST("/idp/api/v1/token")
+  @FormUrlEncoded
   fun extendAuthentication(
     @Field("refresh_token") refreshToken: String,
     @Field("grant_type") grantType: String = "refresh_token",

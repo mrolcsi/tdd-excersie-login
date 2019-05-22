@@ -22,7 +22,8 @@ class LoginFragment : Fragment() {
     super.onActivityCreated(savedInstanceState)
 
     if (!this::viewModel.isInitialized) {
-      viewModel = ViewModelProviders.of(this).get(LoginViewModel::class.java)
+      viewModel = ViewModelProviders.of(this, LoginViewModel.Factory(requireContext()))
+        .get(LoginViewModel::class.java)
     }
 
     viewModel.authenticationState.observe(viewLifecycleOwner, Observer { state ->
