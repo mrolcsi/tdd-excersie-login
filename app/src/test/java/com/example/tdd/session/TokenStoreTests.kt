@@ -1,32 +1,41 @@
 package com.example.tdd.session
 
 import android.content.Context
+import android.content.SharedPreferences
 import com.example.tdd.api.models.AuthenticationResponse
-import com.example.tdd.util.InMemorySharedPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.eq
+import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
+import org.mockito.MockitoAnnotations
 
-class SessionManagerTests {
+class TokenStoreTests {
 
-  private lateinit var manager: SessionManager
+  private lateinit var tokenStore: TokenStore
   private lateinit var fakeToken: AuthenticationResponse
+
+  @Mock private lateinit var mockPreferences: SharedPreferences
+  @Mock private lateinit var mockEditor: SharedPreferences.Editor
 
   @Before
   fun setUp() {
+    MockitoAnnotations.initMocks(this)
+    `when`(mockPreferences.edit()).thenReturn(mockEditor)
+
     val mockContext = mock(Context::class.java)
     `when`(
       mockContext.getSharedPreferences(
-        anyString(),
-        eq(Context.MODE_PRIVATE)
+        "session",
+        Context.MODE_PRIVATE
       )
-    ).thenReturn(InMemorySharedPreferences())
+    ).thenReturn(mockPreferences)
 
-    manager = SessionManager(mockContext)
+    tokenStore = TokenStore(mockContext)
 
     fakeToken = AuthenticationResponse(
       DUMMY_ACCESS_TOKEN,
@@ -40,9 +49,9 @@ class SessionManagerTests {
   fun test_storesAccessToken() {
     // Stored in-memory
 
-    manager.accessToken = DUMMY_ACCESS_TOKEN
+    tokenStore.accessToken = DUMMY_ACCESS_TOKEN
 
-    val storedToken = manager.accessToken
+    val storedToken = tokenStore.accessToken
 
     assertEquals("Stored token is different!", DUMMY_ACCESS_TOKEN, storedToken)
   }
@@ -51,11 +60,13 @@ class SessionManagerTests {
   fun test_storesRefreshToken() {
     // Stored in shared preferences
 
-    manager.refreshToken = DUMMY_REFRESH_TOKEN
+    val tokenCaptor = ArgumentCaptor.forClass(String::class.java)
 
-    val storedToken = manager.refreshToken
+    tokenStore.refreshToken = DUMMY_REFRESH_TOKEN
 
-    assertEquals("Stored token is different!", DUMMY_REFRESH_TOKEN, storedToken)
+    verify(mockEditor).putString(eq(TokenStore.PREF_REFRESH_TOKEN), tokenCaptor.capture())
+
+    assertEquals("Stored token is different!", DUMMY_REFRESH_TOKEN, tokenCaptor.value)
   }
 
   companion object {

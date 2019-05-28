@@ -8,13 +8,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.api.models.AuthenticationResponse
-import com.example.tdd.session.SessionManager
+import com.example.tdd.session.TokenStore
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class LoginViewModel(
-  private val sessionManager: SessionManager,
+  private val TokenStore: TokenStore,
   private val apiUrl: String = AuthenticationApi.API_URL
 ) : ViewModel(), Callback<AuthenticationResponse> {
 
@@ -25,7 +25,7 @@ class LoginViewModel(
     get() = mAuthenticationState
 
   init {
-    val token = sessionManager.refreshToken
+    val token = TokenStore.refreshToken
     if (token != null) {
       login(token)
     }
@@ -53,8 +53,8 @@ class LoginViewModel(
     when (response.code()) {
       200 -> {
         response.body()?.run {
-          sessionManager.accessToken = accessToken
-          sessionManager.refreshToken = refreshToken
+          TokenStore.accessToken = accessToken
+          TokenStore.refreshToken = refreshToken
         }
         mAuthenticationState.postValue(AUTHENTICATED)
       }
@@ -76,7 +76,7 @@ class LoginViewModel(
   class Factory(private val context: Context) : ViewModelProvider.NewInstanceFactory() {
 
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-      return LoginViewModel(SessionManager(context)) as T
+      return LoginViewModel(TokenStore(context)) as T
     }
   }
 

@@ -18,7 +18,6 @@ import androidx.test.espresso.action.ViewActions.clearText
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import com.example.tdd.R
-import com.example.tdd.TestApplication
 import com.google.android.material.textfield.TextInputLayout
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.core.IsInstanceOf
@@ -37,11 +36,9 @@ import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
-import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlertDialog
 
 @RunWith(RobolectricTestRunner::class)
-@Config(application = TestApplication::class)
 class LoginFragmentTests {
 
   private lateinit var scenario: FragmentScenario<LoginFragment>
@@ -58,7 +55,7 @@ class LoginFragmentTests {
     `when`(mockViewModel.authenticationState).thenReturn(fakeAuthenticationState)
 
     // Launch fragment
-    scenario = launchFragmentInContainer<LoginFragment> {
+    scenario = launchFragmentInContainer<LoginFragment>(themeResId = R.style.AppTheme) {
       LoginFragment().apply {
         // Inject mock ViewModel into Fragment
         viewModel = mockViewModel
@@ -71,8 +68,6 @@ class LoginFragmentTests {
         }
       }
     }
-
-
   }
 
   @Test
@@ -105,9 +100,7 @@ class LoginFragmentTests {
   fun test_showHidePassword_enabled() {
     scenario.onFragment { fragment ->
 
-      val textPassword = fragment.view?.run {
-        findViewById<TextInputLayout>(R.id.textPassword)
-      }
+      val textPassword = fragment.view?.findViewById<TextInputLayout>(R.id.textPassword)
 
       assertNotNull(
         "a required view was not found: textPassword",

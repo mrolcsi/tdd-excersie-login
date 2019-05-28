@@ -6,7 +6,7 @@ import androidx.core.content.edit
 /**
  * See https://medium.com/@tsaha.cse/advanced-retrofit2-part-2-authorization-handling-ea1431cb86be
  */
-class SessionManager(context: Context) {
+class TokenStore(context: Context) {
 
   private val sharedPrefs = context.getSharedPreferences(PREFS_SESSION, Context.MODE_PRIVATE)
 
@@ -18,6 +18,6 @@ class SessionManager(context: Context) {
 
   companion object {
     private const val PREFS_SESSION = "session"
-    private const val PREF_REFRESH_TOKEN = "refresh_token"
+    const val PREF_REFRESH_TOKEN = "refresh_token"
   }
 }

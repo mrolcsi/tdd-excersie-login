@@ -1,27 +1,21 @@
 package com.example.tdd.login
 
-import android.content.Context
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import com.example.tdd.session.SessionManager
-import com.example.tdd.util.InMemorySharedPreferences
-import com.jraska.livedata.TestObserver
+import com.example.tdd.session.TokenStore
 import com.jraska.livedata.test
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
-import org.junit.AfterClass
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertNull
 import org.junit.Before
-import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
+import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
-import org.mockito.Mockito.anyString
-import org.mockito.Mockito.eq
-import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import java.util.concurrent.TimeUnit
 
@@ -30,22 +24,32 @@ class LoginViewModelTests {
 
   @get:Rule val instantExecutorRule = InstantTaskExecutorRule()
 
-  private lateinit var model: LoginViewModel
-  private lateinit var stateObserver: TestObserver<Int>
+  private lateinit var server: MockWebServer
 
-  @Mock private lateinit var mockSession: SessionManager
+  @Mock private lateinit var mockTokenStore: TokenStore
 
   @Before
   fun setUp() {
     MockitoAnnotations.initMocks(this)
 
-    // Prepare model and observer
-    model = LoginViewModel(mockSession, server.url("/").toString())
-    stateObserver = model.authenticationState.test()
+    // Start server
+    server = MockWebServer().apply { start() }
+  }
+
+  @After
+  fun tearDown() {
+    // Stop server
+    server.shutdown()
+  }
+
+  private fun createModel(): LoginViewModel {
+    return LoginViewModel(mockTokenStore, server.url("/").toString())
   }
 
   @Test
   fun test_viewModel_exposesState() {
+    val model = createModel()
+
     assertNotNull("authenticationState is null!", model.authenticationState)
 
     // Check initial state
@@ -62,14 +66,16 @@ class LoginViewModelTests {
         .setBody(AUTHENTICATION_RESPONSE)
     )
 
+    val model = createModel()
+
     // Request login
     model.login("goodUser", "goodPassword")
 
     // Login should be successful
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.AUTHENTICATED
       )
@@ -81,14 +87,16 @@ class LoginViewModelTests {
     // Mock response
     server.enqueue(MockResponse().setResponseCode(401))
 
+    val model = createModel()
+
     // Request login
     model.login("badUser", "badPassword")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.AUTHENTICATION_FAILED
       )
@@ -100,14 +108,16 @@ class LoginViewModelTests {
     // Simulate network error
     server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
 
+    val model = createModel()
+
     // Request login
     model.login("testUser", "testPassword")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.NETWORK_ERROR
       )
@@ -120,14 +130,16 @@ class LoginViewModelTests {
     // Simulate an unknown server error
     server.enqueue(MockResponse().setResponseCode(500))
 
+    val model = createModel()
+
     // Request login
     model.login("testUser", "testPassword")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.UNKNOWN_ERROR
       )
@@ -141,12 +153,14 @@ class LoginViewModelTests {
         .setBody(AUTHENTICATION_RESPONSE)
     )
 
+    val model = createModel()
+
     model.login("goodToken")
 
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.AUTHENTICATED
       )
@@ -158,14 +172,16 @@ class LoginViewModelTests {
     // Mock response
     server.enqueue(MockResponse().setResponseCode(401))
 
+    val model = createModel()
+
     // Request login
     model.login("badToken")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.AUTHENTICATION_FAILED
       )
@@ -177,14 +193,16 @@ class LoginViewModelTests {
     // Simulate network error
     server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AFTER_REQUEST))
 
+    val model = createModel()
+
     // Request login
     model.login("badToken")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.NETWORK_ERROR
       )
@@ -197,14 +215,16 @@ class LoginViewModelTests {
     // Simulate an unknown server error
     server.enqueue(MockResponse().setResponseCode(500))
 
+    val model = createModel()
+
     // Request login
     model.login("testToken")
 
     // Login should fail
-    stateObserver
+    model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        LoginViewModel.UNAUTHENTICATED,
+        //LoginViewModel.UNAUTHENTICATED,
         LoginViewModel.IN_PROGRESS,
         LoginViewModel.UNKNOWN_ERROR
       )
@@ -213,7 +233,7 @@ class LoginViewModelTests {
   @Test
   fun testLogin_whenInitialized() {
     // Prepare mocks
-    `when`(mockSession.refreshToken).thenReturn("dummyToken")
+    `when`(mockTokenStore.refreshToken).thenReturn("dummyToken")
 
     // Mock response
     server.enqueue(
@@ -223,10 +243,7 @@ class LoginViewModelTests {
     )
 
     // We need a separate models for this
-    val model = LoginViewModel(
-      mockSession,
-      server.url("/").toString()
-    )
+    val model = createModel()
 
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
@@ -239,17 +256,6 @@ class LoginViewModelTests {
 
   @Test
   fun test_whenAuthenticated_savesTokens() {
-    // Prepare mocks
-    val mockContext = mock(Context::class.java)
-    val fakeSharedPrefs = InMemorySharedPreferences()
-    `when`(mockContext.getSharedPreferences(anyString(), eq(Context.MODE_PRIVATE))).thenReturn(fakeSharedPrefs)
-
-    val fakeSession = SessionManager(mockContext)
-
-    // Make sure fake session is empty
-    assertNull(fakeSession.accessToken)
-    assertNull(fakeSession.refreshToken)
-
     // Mock response
     server.enqueue(
       MockResponse()
@@ -258,10 +264,7 @@ class LoginViewModelTests {
     )
 
     // Create new model
-    val model = LoginViewModel(
-      fakeSession,
-      server.url("/").toString()
-    )
+    val model = createModel()
 
     model.login("username", "password")
 
@@ -270,8 +273,13 @@ class LoginViewModelTests {
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValue {
         if (it == LoginViewModel.AUTHENTICATED) {
-          assertEquals(DUMMY_ACCESS_TOKEN, fakeSession.accessToken)
-          assertEquals(DUMMY_REFRESH_TOKEN, fakeSession.refreshToken)
+          val tokenCaptor = ArgumentCaptor.forClass(String::class.java)
+
+          verify(mockTokenStore).accessToken = tokenCaptor.capture()
+          assertEquals(DUMMY_ACCESS_TOKEN, tokenCaptor.value)
+
+          verify(mockTokenStore).refreshToken = tokenCaptor.capture()
+          assertEquals(DUMMY_REFRESH_TOKEN, tokenCaptor.value)
         }
         true
       }
@@ -289,21 +297,5 @@ class LoginViewModelTests {
         "   \"expires_in\": 119," +
         "   \"refresh_token\": \"$DUMMY_REFRESH_TOKEN\"" +
         "}"
-
-    private lateinit var server: MockWebServer
-
-    @JvmStatic
-    @BeforeClass
-    fun setUpServer() {
-      // Start server
-      server = MockWebServer().apply { start() }
-    }
-
-    @JvmStatic
-    @AfterClass
-    fun tearDownServer() {
-      // Stop server
-      server.shutdown()
-    }
   }
 }
