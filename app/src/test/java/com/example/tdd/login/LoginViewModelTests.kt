@@ -1,6 +1,7 @@
 package com.example.tdd.login
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.session.TokenStore
 import com.jraska.livedata.test
 import okhttp3.mockwebserver.MockResponse
@@ -17,6 +18,8 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 // Doesn't need Robolectric
@@ -43,7 +46,12 @@ class LoginViewModelTests {
   }
 
   private fun createModel(): LoginViewModel {
-    return LoginViewModel(mockTokenStore, server.url("/").toString())
+    val service = Retrofit.Builder()
+      .baseUrl(server.url("/"))
+      .addConverterFactory(GsonConverterFactory.create())
+      .build()
+      .create(AuthenticationApi::class.java)
+    return LoginViewModel(mockTokenStore, service)
   }
 
   @Test
