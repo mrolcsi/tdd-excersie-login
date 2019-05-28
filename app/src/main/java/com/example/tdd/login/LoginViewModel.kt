@@ -1,7 +1,6 @@
 package com.example.tdd.login
 
 import android.content.Context
-import androidx.annotation.IntDef
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -18,10 +17,10 @@ class LoginViewModel(
   private val apiUrl: String = AuthenticationApi.API_URL
 ) : ViewModel(), Callback<AuthenticationResponse> {
 
-  private val mAuthenticationState = MutableLiveData<@AuthenticationState Int>().apply {
-    value = UNAUTHENTICATED
+  private val mAuthenticationState = MutableLiveData<AuthenticationState>().apply {
+    value = AuthenticationState.UNAUTHENTICATED
   }
-  val authenticationState: LiveData<Int>
+  val authenticationState: LiveData<AuthenticationState>
     get() = mAuthenticationState
 
   init {
@@ -32,21 +31,21 @@ class LoginViewModel(
   }
 
   fun login(username: String, password: String) {
-    mAuthenticationState.postValue(IN_PROGRESS)
+    mAuthenticationState.postValue(AuthenticationState.IN_PROGRESS)
     AuthenticationApi.getInstance(apiUrl)
       .authenticate(username, password)
       .enqueue(this)
   }
 
   fun login(token: String) {
-    mAuthenticationState.postValue(IN_PROGRESS)
+    mAuthenticationState.postValue(AuthenticationState.IN_PROGRESS)
     AuthenticationApi.getInstance(apiUrl)
       .extendAuthentication(token)
       .enqueue(this)
   }
 
   override fun onFailure(call: Call<AuthenticationResponse>, t: Throwable) {
-    mAuthenticationState.postValue(NETWORK_ERROR)
+    mAuthenticationState.postValue(AuthenticationState.NETWORK_ERROR)
   }
 
   override fun onResponse(call: Call<AuthenticationResponse>, response: Response<AuthenticationResponse>) {
@@ -56,20 +55,11 @@ class LoginViewModel(
           TokenStore.accessToken = accessToken
           TokenStore.refreshToken = refreshToken
         }
-        mAuthenticationState.postValue(AUTHENTICATED)
+        mAuthenticationState.postValue(AuthenticationState.AUTHENTICATED)
       }
-      401 -> mAuthenticationState.postValue(AUTHENTICATION_FAILED)
-      else -> mAuthenticationState.postValue(UNKNOWN_ERROR)
+      401 -> mAuthenticationState.postValue(AuthenticationState.AUTHENTICATION_FAILED)
+      else -> mAuthenticationState.postValue(AuthenticationState.UNKNOWN_ERROR)
     }
-  }
-
-  companion object {
-    const val UNKNOWN_ERROR = -2
-    const val NETWORK_ERROR = -1
-    const val UNAUTHENTICATED = 0
-    const val IN_PROGRESS = 1
-    const val AUTHENTICATED = 200
-    const val AUTHENTICATION_FAILED = 401
   }
 
   @Suppress("UNCHECKED_CAST")
@@ -80,8 +70,13 @@ class LoginViewModel(
     }
   }
 
-  @IntDef(UNAUTHENTICATED, AUTHENTICATED, AUTHENTICATION_FAILED)
-  @Retention(AnnotationRetention.SOURCE)
-  annotation class AuthenticationState
+  enum class AuthenticationState {
+    UNKNOWN_ERROR,
+    NETWORK_ERROR,
+    UNAUTHENTICATED,
+    IN_PROGRESS,
+    AUTHENTICATED,
+    AUTHENTICATION_FAILED,
+  }
 
 }

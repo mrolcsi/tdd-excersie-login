@@ -27,23 +27,27 @@ class LoginFragment : Fragment() {
     }
 
     viewModel.authenticationState.observe(viewLifecycleOwner, Observer { state ->
-      loginProgress.visibility = if (state == LoginViewModel.IN_PROGRESS) View.VISIBLE else View.GONE
-      setInputsEnabled(state != LoginViewModel.IN_PROGRESS)
+      loginProgress.visibility =
+        if (state == LoginViewModel.AuthenticationState.IN_PROGRESS) View.VISIBLE else View.GONE
+      setInputsEnabled(state != LoginViewModel.AuthenticationState.IN_PROGRESS)
 
       when (state) {
-        LoginViewModel.AUTHENTICATED -> findNavController().navigate(R.id.navHome)
-        LoginViewModel.AUTHENTICATION_FAILED -> AlertDialog.Builder(requireContext())
+        LoginViewModel.AuthenticationState.AUTHENTICATED -> findNavController().navigate(R.id.navHome)
+        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED -> AlertDialog.Builder(requireContext())
           .setMessage(R.string.login_invalidUsernameOrPassword)
           .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
           .show()
-        LoginViewModel.NETWORK_ERROR -> AlertDialog.Builder(requireContext())
+        LoginViewModel.AuthenticationState.NETWORK_ERROR -> AlertDialog.Builder(requireContext())
           .setMessage(R.string.login_connectionBroken)
           .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
           .show()
-        LoginViewModel.UNKNOWN_ERROR -> AlertDialog.Builder(requireContext())
+        LoginViewModel.AuthenticationState.UNKNOWN_ERROR -> AlertDialog.Builder(requireContext())
           .setMessage(R.string.login_unexpectedError)
           .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
           .show()
+        else -> {
+          //nothing
+        }
       }
     })
   }

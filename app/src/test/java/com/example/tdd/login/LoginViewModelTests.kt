@@ -53,7 +53,7 @@ class LoginViewModelTests {
     assertNotNull("authenticationState is null!", model.authenticationState)
 
     // Check initial state
-    assertEquals(LoginViewModel.UNAUTHENTICATED, model.authenticationState.value)
+    assertEquals(LoginViewModel.AuthenticationState.UNAUTHENTICATED, model.authenticationState.value)
   }
 
   @Test
@@ -75,9 +75,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.AUTHENTICATED
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.AUTHENTICATED
       )
   }
 
@@ -96,9 +96,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.AUTHENTICATION_FAILED
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
       )
   }
 
@@ -117,9 +117,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.NETWORK_ERROR
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.NETWORK_ERROR
       )
   }
 
@@ -139,9 +139,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.UNKNOWN_ERROR
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.UNKNOWN_ERROR
       )
   }
 
@@ -160,9 +160,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.AUTHENTICATED
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.AUTHENTICATED
       )
   }
 
@@ -181,9 +181,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.AUTHENTICATION_FAILED
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
       )
   }
 
@@ -202,9 +202,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.NETWORK_ERROR
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.NETWORK_ERROR
       )
   }
 
@@ -224,9 +224,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.UNKNOWN_ERROR
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.UNKNOWN_ERROR
       )
   }
 
@@ -248,9 +248,9 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValueHistory(
-        //LoginViewModel.UNAUTHENTICATED,
-        LoginViewModel.IN_PROGRESS,
-        LoginViewModel.AUTHENTICATED
+        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
+        LoginViewModel.AuthenticationState.IN_PROGRESS,
+        LoginViewModel.AuthenticationState.AUTHENTICATED
       )
   }
 
@@ -272,7 +272,7 @@ class LoginViewModelTests {
     model.authenticationState.test()
       .awaitNextValue(10, TimeUnit.SECONDS)
       .assertValue {
-        if (it == LoginViewModel.AUTHENTICATED) {
+        if (it == LoginViewModel.AuthenticationState.AUTHENTICATED) {
           val tokenCaptor = ArgumentCaptor.forClass(String::class.java)
 
           verify(mockTokenStore).accessToken = tokenCaptor.capture()

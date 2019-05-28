@@ -44,7 +44,7 @@ class LoginFragmentTests {
   private lateinit var scenario: FragmentScenario<LoginFragment>
 
   @Mock private lateinit var mockViewModel: LoginViewModel
-  private val fakeAuthenticationState = MutableLiveData<Int>()
+  private val fakeAuthenticationState = MutableLiveData<LoginViewModel.AuthenticationState>()
 
   @Mock private lateinit var mockNavController: NavController
 
@@ -233,7 +233,7 @@ class LoginFragmentTests {
       }
 
       // Simulate login in progress
-      fakeAuthenticationState.value = LoginViewModel.IN_PROGRESS
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
 
       onView(withId(R.id.loginProgress)).check { view, _ ->
         assertThat("Progress Bar is not visible!", view.visibility, equalTo(View.VISIBLE))
@@ -246,10 +246,10 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate login in progress
-      fakeAuthenticationState.value = LoginViewModel.IN_PROGRESS
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
 
       // Simulate success
-      fakeAuthenticationState.value = LoginViewModel.AUTHENTICATED
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATED
 
       // Progress Bar should be hidden again
       onView(withId(R.id.loginProgress)).check { view, _ ->
@@ -263,10 +263,10 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate login in progress
-      fakeAuthenticationState.value = LoginViewModel.IN_PROGRESS
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
 
       // Simulate failure
-      fakeAuthenticationState.value = LoginViewModel.AUTHENTICATION_FAILED
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
 
       // Progress Bar should be hidden again
       onView(withId(R.id.loginProgress)).check { view, _ ->
@@ -280,7 +280,7 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate login in progress
-      fakeAuthenticationState.value = LoginViewModel.IN_PROGRESS
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
 
       onView(withId(R.id.etUsername)).check { view, _ ->
         assertFalse("Username Field is not disabled!", view.isEnabled)
@@ -303,7 +303,7 @@ class LoginFragmentTests {
       onView(withId(R.id.etPassword)).perform(typeText("password"))
 
       // Simulate failure
-      fakeAuthenticationState.value = LoginViewModel.AUTHENTICATION_FAILED
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
 
       onView(withId(R.id.etUsername)).check { view, _ ->
         assertTrue("Username Field is not enabled!", view.isEnabled)
@@ -323,7 +323,7 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate successful login
-      fakeAuthenticationState.value = LoginViewModel.AUTHENTICATED
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATED
 
       // Check if navigation is properly called
       verify(mockNavController).navigate(R.id.navHome)
@@ -336,7 +336,7 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate failure
-      fakeAuthenticationState.value = LoginViewModel.AUTHENTICATION_FAILED
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
 
       val dialog = ShadowAlertDialog.getLatestAlertDialog()
 
@@ -349,7 +349,7 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate connection error
-      fakeAuthenticationState.value = LoginViewModel.NETWORK_ERROR
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.NETWORK_ERROR
 
       val dialog = ShadowAlertDialog.getLatestAlertDialog()
 
@@ -362,7 +362,7 @@ class LoginFragmentTests {
     scenario.onFragment {
 
       // Simulate connection error
-      fakeAuthenticationState.value = LoginViewModel.UNKNOWN_ERROR
+      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.UNKNOWN_ERROR
 
       val dialog = ShadowAlertDialog.getLatestAlertDialog()
 
