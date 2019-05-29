@@ -2,11 +2,12 @@ package com.example.tdd.session
 
 import android.content.Context
 import androidx.core.content.edit
+import javax.inject.Inject
 
 /**
  * See https://medium.com/@tsaha.cse/advanced-retrofit2-part-2-authorization-handling-ea1431cb86be
  */
-class TokenStore(context: Context) {
+class TokenStore @Inject constructor(context: Context) {
 
   private val sharedPrefs = context.getSharedPreferences(PREFS_SESSION, Context.MODE_PRIVATE)
 

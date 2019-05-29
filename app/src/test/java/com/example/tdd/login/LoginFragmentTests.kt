@@ -10,6 +10,7 @@ import androidx.annotation.StringRes
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.test.core.app.ApplicationProvider
@@ -18,6 +19,7 @@ import androidx.test.espresso.action.ViewActions.clearText
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import com.example.tdd.R
+import com.example.tdd.di.InjectingViewModelFactory
 import com.google.android.material.textfield.TextInputLayout
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.core.IsInstanceOf
@@ -39,12 +41,15 @@ import org.robolectric.Shadows
 import org.robolectric.shadows.ShadowAlertDialog
 
 @RunWith(RobolectricTestRunner::class)
+//@Config(application = TestApplication::class)
 class LoginFragmentTests {
 
-  private lateinit var scenario: FragmentScenario<LoginFragment>
+  private lateinit var scenario: FragmentScenario<TestLoginFragment>
 
   @Mock private lateinit var mockViewModel: LoginViewModel
   private val fakeAuthenticationState = MutableLiveData<LoginViewModel.AuthenticationState>()
+
+  @Mock private lateinit var mockViewModelFactory: InjectingViewModelFactory
 
   @Mock private lateinit var mockNavController: NavController
 
@@ -54,15 +59,14 @@ class LoginFragmentTests {
     MockitoAnnotations.initMocks(this)
     `when`(mockViewModel.authenticationState).thenReturn(fakeAuthenticationState)
 
+    `when`(mockViewModelFactory.create(LoginViewModel::class.java)).thenReturn(mockViewModel)
+    TestLoginFragment.testViewModelFactory = mockViewModelFactory
+
     // Launch fragment
-    scenario = launchFragmentInContainer<LoginFragment>(themeResId = R.style.AppTheme) {
-      LoginFragment().apply {
-        // Inject mock ViewModel into Fragment
-        viewModel = mockViewModel
-        // Register a mock NavController when view is created
+    scenario = launchFragmentInContainer<TestLoginFragment>(themeResId = R.style.AppTheme) {
+      TestLoginFragment().apply {
         viewLifecycleOwnerLiveData.observeForever { viewLifecycleOwner ->
-          if (viewLifecycleOwner != null) {
-            // The fragment’s view has just been created
+          viewLifecycleOwner?.run {
             Navigation.setViewNavController(requireView(), mockNavController)
           }
         }
@@ -405,6 +409,20 @@ class LoginFragmentTests {
 
       // Check if dialog is dismissed when OK clicked
       assertTrue("Dialog is still shown!", hasBeenDismissed())
+    }
+  }
+
+  /**
+   * https://proandroiddev.com/testing-dagger-fragments-with-fragmentscenario-155b6ad18747
+   */
+  class TestLoginFragment : LoginFragment() {
+
+    override fun inject() {
+      viewModelFactory = testViewModelFactory
+    }
+
+    companion object {
+      lateinit var testViewModelFactory: ViewModelProvider.Factory
     }
   }
 }

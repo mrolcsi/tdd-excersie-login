@@ -1,20 +1,17 @@
 package com.example.tdd.login
 
-import android.content.Context
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.api.models.AuthenticationResponse
 import com.example.tdd.session.TokenStore
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import javax.inject.Inject
 
-class LoginViewModel(
+class LoginViewModel @Inject constructor(
   private val tokenStore: TokenStore,
   private val authenticationService: AuthenticationApi
 ) : ViewModel(), Callback<AuthenticationResponse> {
@@ -71,20 +68,6 @@ class LoginViewModel(
     IN_PROGRESS,
     AUTHENTICATED,
     AUTHENTICATION_FAILED,
-  }
-
-  @Suppress("UNCHECKED_CAST")
-  class Factory(private val context: Context) : ViewModelProvider.NewInstanceFactory() {
-
-    override fun <T : ViewModel?> create(modelClass: Class<T>): T {
-      val store = TokenStore(context)
-      val service = Retrofit.Builder()
-        .baseUrl(AuthenticationApi.API_URL)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-        .create(AuthenticationApi::class.java)
-      return LoginViewModel(store, service) as T
-    }
   }
 
 }
