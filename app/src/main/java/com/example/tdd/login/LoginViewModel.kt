@@ -1,7 +1,9 @@
 package com.example.tdd.login
 
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.api.models.AuthenticationResponse
@@ -16,11 +18,8 @@ class LoginViewModel @Inject constructor(
   private val authenticationService: AuthenticationApi
 ) : ViewModel(), Callback<AuthenticationResponse> {
 
-  private val mAuthenticationState = MutableLiveData<AuthenticationState>().apply {
-    value = AuthenticationState.UNAUTHENTICATED
-  }
-  val authenticationState: LiveData<AuthenticationState>
-    get() = mAuthenticationState
+  private val _authenticationState = MutableLiveData<AuthenticationState>(AuthenticationState.UNAUTHENTICATED)
+  val authenticationState: LiveData<AuthenticationState> = _authenticationState
 
   init {
     val token = tokenStore.refreshToken
@@ -29,22 +28,43 @@ class LoginViewModel @Inject constructor(
     }
   }
 
+  //region -- DATA BINDING --
+
+  val username = MutableLiveData<String>()
+  var password = MutableLiveData<String>()
+
+  val isInProgress: LiveData<Boolean> = Transformations.map(_authenticationState) { state ->
+    state == AuthenticationState.IN_PROGRESS
+  }
+
+  val isLoginEnabled = MediatorLiveData<Boolean>().apply {
+    addSource(username) { value = updateLoginEnabled() }
+    addSource(password) { value = updateLoginEnabled() }
+    addSource(isInProgress) { value = updateLoginEnabled() }
+  }
+
+  private fun updateLoginEnabled(): Boolean {
+    return !isInProgress.value!! && !username.value.isNullOrBlank() && !password.value.isNullOrBlank()
+  }
+
+  //endregion
+
   fun login(username: String, password: String) {
-    mAuthenticationState.postValue(AuthenticationState.IN_PROGRESS)
+    _authenticationState.postValue(AuthenticationState.IN_PROGRESS)
     authenticationService
       .authenticate(username, password)
       .enqueue(this)
   }
 
   fun login(token: String) {
-    mAuthenticationState.postValue(AuthenticationState.IN_PROGRESS)
+    _authenticationState.postValue(AuthenticationState.IN_PROGRESS)
     authenticationService
       .extendAuthentication(token)
       .enqueue(this)
   }
 
   override fun onFailure(call: Call<AuthenticationResponse>, t: Throwable) {
-    mAuthenticationState.postValue(AuthenticationState.NETWORK_ERROR)
+    _authenticationState.postValue(AuthenticationState.NETWORK_ERROR)
   }
 
   override fun onResponse(call: Call<AuthenticationResponse>, response: Response<AuthenticationResponse>) {
@@ -54,10 +74,10 @@ class LoginViewModel @Inject constructor(
           tokenStore.accessToken = accessToken
           tokenStore.refreshToken = refreshToken
         }
-        mAuthenticationState.postValue(AuthenticationState.AUTHENTICATED)
+        _authenticationState.postValue(AuthenticationState.AUTHENTICATED)
       }
-      401 -> mAuthenticationState.postValue(AuthenticationState.AUTHENTICATION_FAILED)
-      else -> mAuthenticationState.postValue(AuthenticationState.UNKNOWN_ERROR)
+      401 -> _authenticationState.postValue(AuthenticationState.AUTHENTICATION_FAILED)
+      else -> _authenticationState.postValue(AuthenticationState.UNKNOWN_ERROR)
     }
   }
 

@@ -9,13 +9,14 @@ import android.widget.ProgressBar
 import androidx.annotation.StringRes
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.action.ViewActions.clearText
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import com.example.tdd.R
@@ -31,9 +32,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
@@ -48,6 +51,7 @@ class LoginFragmentTests {
 
   @Mock private lateinit var mockViewModel: LoginViewModel
   private val fakeAuthenticationState = MutableLiveData<LoginViewModel.AuthenticationState>()
+  private val fakeIsLoginEnabled = MediatorLiveData<Boolean>()
 
   @Mock private lateinit var mockViewModelFactory: InjectingViewModelFactory
 
@@ -57,9 +61,20 @@ class LoginFragmentTests {
   fun setUp() {
     // Prepare mocks
     MockitoAnnotations.initMocks(this)
-    `when`(mockViewModel.authenticationState).thenReturn(fakeAuthenticationState)
 
     `when`(mockViewModelFactory.create(LoginViewModel::class.java)).thenReturn(mockViewModel)
+
+    `when`(mockViewModel.authenticationState).thenReturn(fakeAuthenticationState)
+
+    `when`(mockViewModel.isInProgress).thenReturn(
+      Transformations.map(fakeAuthenticationState) { state ->
+        state == LoginViewModel.AuthenticationState.IN_PROGRESS
+      }
+    )
+
+    `when`(mockViewModel.isLoginEnabled).thenReturn(fakeIsLoginEnabled)
+
+    // Inject mocked ViewModelFactory
     TestLoginFragment.testViewModelFactory = mockViewModelFactory
 
     // Launch fragment
@@ -118,46 +133,6 @@ class LoginFragmentTests {
   }
 
   @Test
-  fun test_whenUsernameOrPasswordEmpty_loginDisabled() {
-    // Check initial states: fields are empty, button is disabled
-    onView(withId(R.id.etUsername)).check { view, _ ->
-      assertTrue("etUsername should be empty!", (view as EditText).text.isEmpty())
-    }
-    onView(withId(R.id.etPassword)).check { view, _ ->
-      assertTrue("etPassword should be empty!", (view as EditText).text.isEmpty())
-    }
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertFalse("btnLogin should be disabled", view.isEnabled)
-    }
-
-    // Add text to username field -> button is still disabled
-    onView(withId(R.id.etUsername)).perform(typeText("testUser"))
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertFalse("btnLogin should be disabled", view.isEnabled)
-    }
-
-    // Add text to password -> button becomes enabled
-    onView(withId(R.id.etPassword)).perform(typeText("testPassword"))
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertTrue("btnLogin should be enabled", view.isEnabled)
-    }
-
-    // Clear text from username -> button becomes disabled
-    onView(withId(R.id.etUsername)).perform(clearText())
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertFalse("btnLogin should be disabled", view.isEnabled)
-    }
-
-    // Clear text from password -> button is still disabled
-    onView(withId(R.id.etPassword)).perform(clearText())
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertFalse("btnLogin should be disabled", view.isEnabled)
-    }
-
-    // That's a full circle.
-  }
-
-  @Test
   fun test_fragment_hasViewModel() {
     scenario.onFragment { fragment ->
       assertNotNull(fragment.viewModel)
@@ -165,24 +140,36 @@ class LoginFragmentTests {
     }
   }
 
+  @Suppress("UNCHECKED_CAST")
   @Test
-  fun test_loginButton_hasOnClickListener() {
-    onView(withId(R.id.btnLogin)).check { view, _ ->
-      assertTrue("btnLogin has no OnClickListener", view.hasOnClickListeners())
-    }
-  }
+  fun test_typedTextIsSaved() {
 
-  @Test
-  fun test_loginButton_callsLogin() {
-    scenario.onFragment { fragment ->
+    // Prepare mocks
+    val mockUsernameField = mock(MutableLiveData::class.java) as MutableLiveData<String>
+    val mockPasswordField = mock(MutableLiveData::class.java) as MutableLiveData<String>
 
-      // Simulate a click on the button
-      fragment.view?.findViewById<Button>(R.id.btnLogin)?.run {
-        performClick()
-        // Verify if method was called
-        verify(fragment.viewModel).login(anyString(), anyString())
-      }
+    `when`(mockViewModel.username).thenReturn(mockUsernameField)
+    `when`(mockViewModel.password).thenReturn(mockPasswordField)
+
+    val username = "username"
+    val password = "password"
+
+    val usernameCaptor = ArgumentCaptor.forClass(String::class.java)
+    val passwordCaptor = ArgumentCaptor.forClass(String::class.java)
+
+    scenario.onFragment {
+
+      onView(withId(R.id.etUsername)).perform(typeText(username))
+      onView(withId(R.id.etPassword)).perform(typeText(password))
+
+      // Text is typed in character by character
+      verify(mockViewModel.username, times(username.length)).value = usernameCaptor.capture()
+      verify(mockViewModel.password, times(password.length)).value = passwordCaptor.capture()
+
+      assertEquals(username, usernameCaptor.value)
+      assertEquals(password, passwordCaptor.value)
     }
+
   }
 
   @Test
@@ -192,15 +179,16 @@ class LoginFragmentTests {
       // Add some texts into the fields
       val username = "username"
       val password = "password"
-      onView(withId(R.id.etUsername)).perform(typeText(username))
-      onView(withId(R.id.etPassword)).perform(typeText(password))
+
+      `when`(mockViewModel.username).thenReturn(MutableLiveData(username))
+      `when`(mockViewModel.password).thenReturn(MutableLiveData(password))
 
       // Simulate a click on the button
-      fragment.view?.findViewById<Button>(R.id.btnLogin)?.run {
-        performClick()
-        // Verify arguments
-        verify(fragment.viewModel).login(username, password)
-      }
+      //onView(withId(R.id.btnLogin)).perform(click())
+      fragment.view?.findViewById<Button>(R.id.btnLogin)?.performClick()
+
+      // Verify arguments
+      verify(fragment.viewModel).login(username, password)
     }
   }
 
@@ -299,25 +287,28 @@ class LoginFragmentTests {
   }
 
   @Test
-  fun test_whenLoginFails_inputsAreEnabled() {
+  fun test_whenLoginIsEnabled_buttonIsEnabled() {
+
+    // Enabled
+
     scenario.onFragment {
 
-      // Put texts into input fields
-      onView(withId(R.id.etUsername)).perform(typeText("username"))
-      onView(withId(R.id.etPassword)).perform(typeText("password"))
+      fakeIsLoginEnabled.value = true
 
-      // Simulate failure
-      fakeAuthenticationState.value = LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
-
-      onView(withId(R.id.etUsername)).check { view, _ ->
-        assertTrue("Username Field is not enabled!", view.isEnabled)
-      }
-      onView(withId(R.id.etPassword)).check { view, _ ->
-        assertTrue("Password Field is not enabled!", view.isEnabled)
-      }
-      // Login button is only enabled when there is text in the input fields
       onView(withId(R.id.btnLogin)).check { view, _ ->
         assertTrue("Login Button is not enabled!", view.isEnabled)
+      }
+    }
+
+    // Disabled
+
+    scenario.onFragment {
+
+      fakeIsLoginEnabled.value = false
+
+
+      onView(withId(R.id.btnLogin)).check { view, _ ->
+        assertFalse("Login Button is enabled!", view.isEnabled)
       }
     }
   }

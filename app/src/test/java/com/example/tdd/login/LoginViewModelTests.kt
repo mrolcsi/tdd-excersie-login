@@ -1,6 +1,7 @@
 package com.example.tdd.login
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import androidx.lifecycle.MutableLiveData
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.session.TokenStore
 import com.jraska.livedata.test
@@ -291,6 +292,46 @@ class LoginViewModelTests {
         }
         true
       }
+  }
+
+  // -- DATA BINDING --
+
+  @Test
+  fun test_whenStateIsInProgress_isInProgressTrue() {
+
+    val model = createModel()
+
+    model.isInProgress.test().assertValue(false)
+
+    val authState = model.authenticationState as MutableLiveData<LoginViewModel.AuthenticationState>
+
+    authState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
+
+    model.isInProgress.test().assertValue(true)
+
+    authState.value = LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
+
+    model.isInProgress.test().assertValue(false)
+  }
+
+  @Test
+  fun test_whenUsernameOrPasswordEmpty_loginIsDisabled() {
+
+    val model = createModel()
+
+    // Username and Password is empty by default
+    model.username.test().assertNoValue()
+    model.password.test().assertNoValue()
+    model.isLoginEnabled.test().assertValue(false)
+
+    // Add username -> still false
+    model.username.value = "username"
+    model.isLoginEnabled.test().assertValue(false)
+
+    // Add password -> true
+    model.password.value = "password"
+    model.isLoginEnabled.test().assertValue(true)
+
   }
 
   companion object {
