@@ -8,6 +8,7 @@ import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
@@ -20,10 +21,10 @@ class NetworkModule {
 
   @Provides
   @Singleton
-  fun provideRetrofit(gson: Gson) =
+  fun provideRetrofit(gson: Gson): Retrofit.Builder =
     Retrofit.Builder()
       .addConverterFactory(GsonConverterFactory.create(gson))
-
+      .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
 
   @Provides
   @Singleton
@@ -32,7 +33,5 @@ class NetworkModule {
 
   @Provides
   @Singleton
-  fun provideTokenStore(context: Context): TokenStore {
-    return TokenStore(context)
-  }
+  fun provideTokenStore(context: Context) = TokenStore(context)
 }

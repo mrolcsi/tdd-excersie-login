@@ -8,15 +8,17 @@ import androidx.lifecycle.ViewModel
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.api.models.AuthenticationResponse
 import com.example.tdd.session.TokenStore
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
+import retrofit2.HttpException
 import javax.inject.Inject
 
 class LoginViewModel @Inject constructor(
   private val tokenStore: TokenStore,
   private val authenticationService: AuthenticationApi
-) : ViewModel(), Callback<AuthenticationResponse> {
+) : ViewModel() {
+
+  private var compositeDisposable: CompositeDisposable = CompositeDisposable()
 
   private val _authenticationState = MutableLiveData<AuthenticationState>(AuthenticationState.UNAUTHENTICATED)
   val authenticationState: LiveData<AuthenticationState> = _authenticationState
@@ -51,34 +53,44 @@ class LoginViewModel @Inject constructor(
 
   fun login(username: String, password: String) {
     _authenticationState.postValue(AuthenticationState.IN_PROGRESS)
-    authenticationService
-      .authenticate(username, password)
-      .enqueue(this)
+    compositeDisposable.add(
+      authenticationService
+        .authenticate(username, password)
+        .subscribeOn(Schedulers.io())
+        .subscribe(this::onSuccess, this::onFailure)
+    )
   }
 
   fun login(token: String) {
     _authenticationState.postValue(AuthenticationState.IN_PROGRESS)
-    authenticationService
-      .extendAuthentication(token)
-      .enqueue(this)
+    compositeDisposable.add(
+      authenticationService
+        .extendAuthentication(token)
+        .subscribeOn(Schedulers.io())
+        .subscribe(this::onSuccess, this::onFailure)
+    )
   }
 
-  override fun onFailure(call: Call<AuthenticationResponse>, t: Throwable) {
-    _authenticationState.postValue(AuthenticationState.NETWORK_ERROR)
+  private fun onSuccess(response: AuthenticationResponse) {
+    _authenticationState.postValue(AuthenticationState.AUTHENTICATED)
+    tokenStore.accessToken = response.accessToken
+    tokenStore.refreshToken = response.refreshToken
   }
 
-  override fun onResponse(call: Call<AuthenticationResponse>, response: Response<AuthenticationResponse>) {
-    when (response.code()) {
-      200 -> {
-        response.body()?.run {
-          tokenStore.accessToken = accessToken
-          tokenStore.refreshToken = refreshToken
-        }
-        _authenticationState.postValue(AuthenticationState.AUTHENTICATED)
+  private fun onFailure(throwable: Throwable) {
+    if (throwable is HttpException) {
+      when (throwable.code()) {
+        401 -> _authenticationState.postValue(AuthenticationState.AUTHENTICATION_FAILED)
+        else -> _authenticationState.postValue(AuthenticationState.UNKNOWN_ERROR)
       }
-      401 -> _authenticationState.postValue(AuthenticationState.AUTHENTICATION_FAILED)
-      else -> _authenticationState.postValue(AuthenticationState.UNKNOWN_ERROR)
+    } else {
+      _authenticationState.postValue(AuthenticationState.NETWORK_ERROR)
     }
+  }
+
+  override fun onCleared() {
+    super.onCleared()
+    compositeDisposable.clear()
   }
 
   enum class AuthenticationState {

@@ -1,7 +1,7 @@
 package com.example.tdd.api
 
 import com.example.tdd.api.models.AuthenticationResponse
-import retrofit2.Call
+import io.reactivex.Single
 import retrofit2.http.Field
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.POST
@@ -15,7 +15,7 @@ interface AuthenticationApi {
     @Field("password") password: String,
     @Field("grant_type") grantType: String = "password",
     @Field("client_id") clientId: String = CLIENT_ID
-  ): Call<AuthenticationResponse>
+  ): Single<AuthenticationResponse>
 
   @POST("/idp/api/v1/token")
   @FormUrlEncoded
@@ -23,7 +23,7 @@ interface AuthenticationApi {
     @Field("refresh_token") refreshToken: String,
     @Field("grant_type") grantType: String = "refresh_token",
     @Field("client_id") clientId: String = CLIENT_ID
-  ): Call<AuthenticationResponse>
+  ): Single<AuthenticationResponse>
 
   companion object {
     const val API_URL = "https://example.vividmindsoft.com"

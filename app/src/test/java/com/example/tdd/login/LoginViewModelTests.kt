@@ -20,6 +20,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
@@ -50,6 +51,7 @@ class LoginViewModelTests {
     val service = Retrofit.Builder()
       .baseUrl(server.url("/"))
       .addConverterFactory(GsonConverterFactory.create())
+      .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
       .build()
       .create(AuthenticationApi::class.java)
     return LoginViewModel(mockTokenStore, service)
@@ -82,7 +84,7 @@ class LoginViewModelTests {
 
     // Login should be successful
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
+      .awaitNextValue()
       .assertValueHistory(
         //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
         LoginViewModel.AuthenticationState.IN_PROGRESS,
