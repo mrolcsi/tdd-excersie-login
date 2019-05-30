@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.StringRes
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -35,29 +36,19 @@ open class LoginFragment @Inject constructor() : Fragment() {
     super.onActivityCreated(savedInstanceState)
 
     viewModel = ViewModelProviders.of(this, viewModelFactory).get(LoginViewModel::class.java)
+    binding.viewModel = viewModel
 
     viewModel.authenticationState.observe(viewLifecycleOwner, Observer { state ->
       when (state) {
         LoginViewModel.AuthenticationState.AUTHENTICATED -> findNavController().navigate(R.id.navHome)
-        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED -> AlertDialog.Builder(requireContext())
-          .setMessage(R.string.login_invalidUsernameOrPassword)
-          .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
-          .show()
-        LoginViewModel.AuthenticationState.NETWORK_ERROR -> AlertDialog.Builder(requireContext())
-          .setMessage(R.string.login_connectionBroken)
-          .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
-          .show()
-        LoginViewModel.AuthenticationState.UNKNOWN_ERROR -> AlertDialog.Builder(requireContext())
-          .setMessage(R.string.login_unexpectedError)
-          .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
-          .show()
+        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED -> showErrorMessage(R.string.login_invalidUsernameOrPassword)
+        LoginViewModel.AuthenticationState.NETWORK_ERROR -> showErrorMessage(R.string.login_connectionBroken)
+        LoginViewModel.AuthenticationState.UNKNOWN_ERROR -> showErrorMessage(R.string.login_unexpectedError)
         else -> {
           //nothing
         }
       }
     })
-
-    binding.viewModel = viewModel
   }
 
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? =
@@ -65,4 +56,11 @@ open class LoginFragment @Inject constructor() : Fragment() {
       binding = it
       it.lifecycleOwner = viewLifecycleOwner
     }.root
+
+  private fun showErrorMessage(@StringRes messageId: Int) {
+    AlertDialog.Builder(requireContext())
+      .setMessage(messageId)
+      .setPositiveButton(android.R.string.ok) { dialog, _ -> dialog.dismiss() }
+      .show()
+  }
 }
