@@ -14,7 +14,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 
-class TokenStoreTests {
+class SharedTokenStoreTests {
 
   private lateinit var tokenStore: TokenStore
   private lateinit var fakeToken: AuthenticationResponse
@@ -35,7 +35,7 @@ class TokenStoreTests {
       )
     ).thenReturn(mockPreferences)
 
-    tokenStore = TokenStore(mockContext)
+    tokenStore = SharedPrefsTokenStore(mockContext)
 
     fakeToken = AuthenticationResponse(
       DUMMY_ACCESS_TOKEN,
@@ -64,7 +64,7 @@ class TokenStoreTests {
 
     tokenStore.refreshToken = DUMMY_REFRESH_TOKEN
 
-    verify(mockEditor).putString(eq(TokenStore.PREF_REFRESH_TOKEN), tokenCaptor.capture())
+    verify(mockEditor).putString(eq(SharedPrefsTokenStore.PREF_REFRESH_TOKEN), tokenCaptor.capture())
 
     assertEquals("Stored token is different!", DUMMY_REFRESH_TOKEN, tokenCaptor.value)
   }

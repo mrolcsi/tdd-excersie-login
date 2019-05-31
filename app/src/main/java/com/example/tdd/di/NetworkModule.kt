@@ -2,6 +2,7 @@ package com.example.tdd.di
 
 import android.content.Context
 import com.example.tdd.api.AuthenticationApi
+import com.example.tdd.session.SharedPrefsTokenStore
 import com.example.tdd.session.TokenStore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -33,5 +34,5 @@ class NetworkModule {
 
   @Provides
   @Singleton
-  fun provideTokenStore(context: Context) = TokenStore(context)
+  fun provideTokenStore(context: Context): TokenStore = SharedPrefsTokenStore(context)
 }
