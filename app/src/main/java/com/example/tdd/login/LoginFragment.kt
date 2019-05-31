@@ -16,7 +16,7 @@ import com.example.tdd.databinding.FragmentLoginBinding
 import dagger.android.support.AndroidSupportInjection
 import javax.inject.Inject
 
-open class LoginFragment @Inject constructor() : Fragment() {
+open class LoginFragment : Fragment() {
 
   @Inject lateinit var viewModelFactory: ViewModelProvider.Factory
   lateinit var viewModel: LoginViewModel
