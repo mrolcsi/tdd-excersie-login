@@ -1,10 +1,11 @@
 package com.example.tdd.login
 
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
-import androidx.lifecycle.MutableLiveData
 import com.example.tdd.api.AuthenticationApi
 import com.example.tdd.session.TokenStore
 import com.jraska.livedata.test
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.plugins.RxJavaPlugins
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -14,17 +15,19 @@ import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
+import org.robolectric.RobolectricTestRunner
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-// Doesn't need Robolectric
+@RunWith(RobolectricTestRunner::class)
 class LoginViewModelTests {
 
   @get:Rule val instantExecutorRule = InstantTaskExecutorRule()
@@ -35,6 +38,10 @@ class LoginViewModelTests {
 
   @Before
   fun setUp() {
+    // Rx
+    RxJavaPlugins.setIoSchedulerHandler { AndroidSchedulers.mainThread() }
+
+    // Mocks
     MockitoAnnotations.initMocks(this)
 
     // Start server
@@ -47,14 +54,14 @@ class LoginViewModelTests {
     server.shutdown()
   }
 
-  private fun createModel(): LoginViewModel {
+  private fun createModel(): LoginViewModelImpl {
     val service = Retrofit.Builder()
       .baseUrl(server.url("/"))
       .addConverterFactory(GsonConverterFactory.create())
       .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
       .build()
       .create(AuthenticationApi::class.java)
-    return LoginViewModel(mockTokenStore, service)
+    return LoginViewModelImpl(mockTokenStore, service)
   }
 
   @Test
@@ -84,12 +91,8 @@ class LoginViewModelTests {
 
     // Login should be successful
     model.authenticationState.test()
-      .awaitNextValue()
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.AUTHENTICATED
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.AUTHENTICATED)
   }
 
   @Test
@@ -105,12 +108,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED)
   }
 
   @Test
@@ -126,12 +125,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.NETWORK_ERROR
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.NETWORK_ERROR)
   }
 
   @Test
@@ -148,12 +143,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS)
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.UNKNOWN_ERROR
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.UNKNOWN_ERROR)
   }
 
   @Test
@@ -169,12 +160,8 @@ class LoginViewModelTests {
     model.login("goodToken")
 
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS)
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.AUTHENTICATED
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.AUTHENTICATED)
   }
 
   @Test
@@ -190,12 +177,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED
-      )
+      .awaitNextValue(10, TimeUnit.SECONDS)
+      .assertValue(LoginViewModel.AuthenticationState.AUTHENTICATION_FAILED)
   }
 
   @Test
@@ -211,12 +194,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS) // Wait for network call to finish
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.NETWORK_ERROR
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.NETWORK_ERROR)
   }
 
   @Test
@@ -233,12 +212,8 @@ class LoginViewModelTests {
 
     // Login should fail
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS)
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.UNKNOWN_ERROR
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.UNKNOWN_ERROR)
   }
 
   @Test
@@ -257,12 +232,8 @@ class LoginViewModelTests {
     val model = createModel()
 
     model.authenticationState.test()
-      .awaitNextValue(10, TimeUnit.SECONDS)
-      .assertValueHistory(
-        //LoginViewModel.AuthenticationState.UNAUTHENTICATED,
-        LoginViewModel.AuthenticationState.IN_PROGRESS,
-        LoginViewModel.AuthenticationState.AUTHENTICATED
-      )
+      .awaitValue()
+      .assertValue(LoginViewModel.AuthenticationState.AUTHENTICATED)
   }
 
   @Test
@@ -305,7 +276,7 @@ class LoginViewModelTests {
 
     model.isInProgress.test().assertValue(false)
 
-    val authState = model.authenticationState as MutableLiveData<LoginViewModel.AuthenticationState>
+    val authState = model.authenticationState
 
     authState.value = LoginViewModel.AuthenticationState.IN_PROGRESS
 

@@ -1,9 +1,6 @@
 package com.example.tdd.di
 
-import android.content.Context
 import com.example.tdd.api.AuthenticationApi
-import com.example.tdd.session.SharedPrefsTokenStore
-import com.example.tdd.session.TokenStore
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -32,7 +29,4 @@ class NetworkModule {
   fun provideAuthenticationService(builder: Retrofit.Builder): AuthenticationApi =
     builder.baseUrl(AuthenticationApi.API_URL).build().create(AuthenticationApi::class.java)
 
-  @Provides
-  @Singleton
-  fun provideTokenStore(context: Context): TokenStore = SharedPrefsTokenStore(context)
 }

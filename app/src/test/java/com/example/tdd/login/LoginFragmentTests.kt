@@ -1,18 +1,19 @@
 package com.example.tdd.login
 
 import android.app.AlertDialog
+import android.app.Application
 import android.content.Context
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import androidx.annotation.StringRes
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.testing.FragmentScenario
 import androidx.fragment.app.testing.launchFragmentInContainer
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
-import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.test.core.app.ApplicationProvider
@@ -20,8 +21,9 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.typeText
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import com.example.tdd.R
-import com.example.tdd.di.InjectingViewModelFactory
 import com.google.android.material.textfield.TextInputLayout
+import dagger.android.AndroidInjector
+import dagger.android.support.HasSupportFragmentInjector
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.core.IsInstanceOf
 import org.junit.Assert.assertEquals
@@ -41,19 +43,18 @@ import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
+import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlertDialog
 
 @RunWith(RobolectricTestRunner::class)
-//@Config(application = TestApplication::class)
+@Config(application = LoginFragmentTests.TestApplication::class)
 class LoginFragmentTests {
 
-  private lateinit var scenario: FragmentScenario<TestLoginFragment>
+  private lateinit var scenario: FragmentScenario<LoginFragment>
 
-  @Mock private lateinit var mockViewModel: LoginViewModel
+  private val mockViewModel = ApplicationProvider.getApplicationContext<TestApplication>().mockViewModel
   private val fakeAuthenticationState = MutableLiveData<LoginViewModel.AuthenticationState>()
   private val fakeIsLoginEnabled = MediatorLiveData<Boolean>()
-
-  @Mock private lateinit var mockViewModelFactory: InjectingViewModelFactory
 
   @Mock private lateinit var mockNavController: NavController
 
@@ -61,8 +62,6 @@ class LoginFragmentTests {
   fun setUp() {
     // Prepare mocks
     MockitoAnnotations.initMocks(this)
-
-    `when`(mockViewModelFactory.create(LoginViewModel::class.java)).thenReturn(mockViewModel)
 
     `when`(mockViewModel.authenticationState).thenReturn(fakeAuthenticationState)
 
@@ -74,12 +73,9 @@ class LoginFragmentTests {
 
     `when`(mockViewModel.isLoginEnabled).thenReturn(fakeIsLoginEnabled)
 
-    // Inject mocked ViewModelFactory
-    TestLoginFragment.testViewModelFactory = mockViewModelFactory
-
     // Launch fragment
-    scenario = launchFragmentInContainer<TestLoginFragment>(themeResId = R.style.AppTheme) {
-      TestLoginFragment().apply {
+    scenario = launchFragmentInContainer<LoginFragment>(themeResId = R.style.AppTheme) {
+      LoginFragment().apply {
         viewLifecycleOwnerLiveData.observeForever { viewLifecycleOwner ->
           viewLifecycleOwner?.run {
             Navigation.setViewNavController(requireView(), mockNavController)
@@ -173,22 +169,14 @@ class LoginFragmentTests {
   }
 
   @Test
-  fun test_loginWasCalled_withInputParameters() {
+  fun test_whenButtonIsClicked_loginWasCalled() {
     scenario.onFragment { fragment ->
-
-      // Add some texts into the fields
-      val username = "username"
-      val password = "password"
-
-      `when`(mockViewModel.username).thenReturn(MutableLiveData(username))
-      `when`(mockViewModel.password).thenReturn(MutableLiveData(password))
-
       // Simulate a click on the button
       //onView(withId(R.id.btnLogin)).perform(click())
       fragment.view?.findViewById<Button>(R.id.btnLogin)?.performClick()
 
       // Verify arguments
-      verify(fragment.viewModel).login(username, password)
+      verify(fragment.viewModel).onLoginClicked()
     }
   }
 
@@ -403,17 +391,17 @@ class LoginFragmentTests {
     }
   }
 
-  /**
-   * https://proandroiddev.com/testing-dagger-fragments-with-fragmentscenario-155b6ad18747
-   */
-  class TestLoginFragment : LoginFragment() {
+  class TestApplication : Application(), HasSupportFragmentInjector, AndroidInjector<Fragment> {
 
-    override fun inject() {
-      viewModelFactory = testViewModelFactory
+    val mockViewModel: LoginViewModel = mock(LoginViewModel::class.java)
+
+    override fun inject(instance: Fragment?) {
+      (instance as LoginFragment).viewModel = mockViewModel
     }
 
-    companion object {
-      lateinit var testViewModelFactory: ViewModelProvider.Factory
+    override fun supportFragmentInjector(): AndroidInjector<Fragment> {
+      return this
     }
+
   }
 }

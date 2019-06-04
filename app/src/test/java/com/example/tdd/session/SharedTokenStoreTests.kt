@@ -28,12 +28,7 @@ class SharedTokenStoreTests {
     `when`(mockPreferences.edit()).thenReturn(mockEditor)
 
     val mockContext = mock(Context::class.java)
-    `when`(
-      mockContext.getSharedPreferences(
-        "session",
-        Context.MODE_PRIVATE
-      )
-    ).thenReturn(mockPreferences)
+    `when`(mockContext.getSharedPreferences("session", Context.MODE_PRIVATE)).thenReturn(mockPreferences)
 
     tokenStore = SharedPrefsTokenStore(mockContext)
 
@@ -64,7 +59,7 @@ class SharedTokenStoreTests {
 
     tokenStore.refreshToken = DUMMY_REFRESH_TOKEN
 
-    verify(mockEditor).putString(eq(SharedPrefsTokenStore.PREF_REFRESH_TOKEN), tokenCaptor.capture())
+    verify(mockEditor).putString(eq("refresh_token"), tokenCaptor.capture())
 
     assertEquals("Stored token is different!", DUMMY_REFRESH_TOKEN, tokenCaptor.value)
   }
